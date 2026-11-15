@@ -1303,6 +1303,116 @@
         body[data-layout="dock"] .dash-filter { border-radius: 999px !important; }
         body[data-layout="dock"] .dash-filter button { border-radius: 999px !important; }
     #inName, #idContainer .id-nm { font-family: 'Hind Siliguri','SymFB','Noto Sans','Noto Sans Math','Noto Sans Symbols','Noto Sans Symbols 2',sans-serif; }
+
+/* ===================================================================
+   পিসি/ল্যাপটপ ডেস্কটপ ভিউ — শুধু বড় স্ক্রিন (৯০০px+) ও মাউস থাকলে
+   ফোনে এই অংশের কিছুই কাজ করে না
+   =================================================================== */
+@media (min-width: 900px) and (pointer: fine) {
+    :root { --sb-w: 248px; --pw: 1240px; }
+    body { display: block; font-size: 14px; }
+    .app-container { max-width: none !important; width: 100%; border: none !important; box-shadow: none !important;
+        background-image: radial-gradient(1000px 520px at 78% -8%, var(--primary-glow), transparent 65%); }
+    #lxTop { display: none !important; }
+
+    /* ---------- সাইডবার ---------- */
+    body .bottom-nav {
+        display: flex !important; position: absolute !important; left: 0 !important; top: 0 !important; bottom: 0 !important; right: auto !important;
+        width: var(--sb-w) !important; height: auto !important; max-width: none !important; transform: none !important;
+        flex-direction: column !important; justify-content: flex-start !important; align-items: stretch !important;
+        gap: 4px !important; padding: 26px 14px 20px !important; overflow-y: auto !important;
+        border-radius: 0 !important; border: none !important; border-right: 1px solid var(--border) !important;
+        box-shadow: none !important; margin: 0 !important; background: var(--surface-strong, var(--bottom-nav-bg)) !important;
+    }
+    body .bottom-nav::before {
+        content: 'Hishab'; display: block; padding: 2px 14px 26px; font-size: 22px; font-weight: 800; letter-spacing: -.6px;
+        background: var(--primary-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+    }
+    body .bottom-nav .nav-item {
+        position: relative; flex: 0 0 auto !important; flex-direction: row !important; justify-content: flex-start !important; align-items: center !important;
+        width: auto !important; height: 44px !important; padding: 0 14px !important; gap: 14px !important; margin: 0 !important;
+        border-radius: 10px !important; font-size: 13.5px !important; font-weight: 600; cursor: pointer; transform: none !important;
+        color: var(--text-muted); background: transparent !important; border: none !important; box-shadow: none !important;
+        transition: background .15s, color .15s;
+    }
+    body .bottom-nav .nav-item span { display: inline !important; color: inherit !important; }
+    body .bottom-nav .nav-item svg { display: block !important; width: 20px !important; height: 20px !important; padding: 0 !important; background: none !important; flex-shrink: 0; filter: none !important; }
+    body .bottom-nav .nav-item:hover { background: var(--surface-light) !important; color: var(--text); }
+    body .bottom-nav .nav-item.active { background: var(--primary-glow) !important; color: var(--primary) !important; font-weight: 700; }
+    body .bottom-nav .nav-item::after { display: none !important; }
+    body .bottom-nav .nav-item.active::before { content: ''; position: absolute; left: -14px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--primary); }
+    .nav-item.reordering { animation: none; }
+
+    /* ---------- মূল এলাকা: সাইডবারের ডানে, মাঝখানে সাজানো ---------- */
+    body .page {
+        padding-top: 34px !important; padding-bottom: 60px !important;
+        padding-left: max(calc(var(--sb-w) + 40px), calc(var(--sb-w) + (100% - var(--sb-w) - var(--pw)) / 2)) !important;
+        padding-right: max(40px, calc((100% - var(--sb-w) - var(--pw)) / 2)) !important;
+    }
+    #page-wheel { padding-bottom: 200px !important; --pw: 1100px; }
+    #page-id-detail { --pw: 860px; } #page-income { --pw: 900px; } #page-reports { --pw: 900px; } #page-settings { --pw: 1040px; }
+
+    /* কার্ডের সাধারণ মান */
+    .stat-box, .pro-card { padding: 18px 20px; }
+    body .stat-box h3 { font-size: 22px !important; letter-spacing: -.4px; }
+    .stat-box p { font-size: 12px; }
+    .pro-card.set-acc { padding: 0; }
+    .pro-card-h { font-size: 14px; margin-bottom: 14px; }
+    h2 { letter-spacing: -.3px; }
+    .btn { transition: transform .12s, filter .15s; }
+    .btn:hover { filter: brightness(1.08); }
+    .mini-btn:hover, .tx-btn:hover { filter: brightness(1.15); }
+
+    /* ---------- ড্যাশবোর্ড: ১২ কলামের গ্রিড ---------- */
+    #page-dash.active { display: grid; grid-auto-rows: max-content; grid-template-columns: repeat(12, 1fr); gap: 18px; align-content: start; }
+    #page-dash.active > * { grid-column: 1 / -1; margin: 0 !important; min-width: 0; }
+    #page-dash.active > .pro-card { grid-column: span 6; }
+    #page-dash .dash-filter { max-width: 460px; }
+    body #page-dash .top-global-bal { padding: 30px 34px !important; border-radius: 22px; }
+    body #page-dash .top-global-bal h2 { font-size: 50px !important; letter-spacing: -1.6px !important; margin: 4px 0 14px; }
+    body #page-dash .top-global-bal .icon-box { width: 44px !important; height: 44px !important; cursor: pointer; }
+    #page-dash .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; margin: 0; }
+    #page-dash .hero-card { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 20px 34px; }
+    #page-dash .hero-card > :first-child { grid-column: 1; }
+    #page-dash .hero-card h1 { grid-column: 1; font-size: 36px; }
+    #page-dash .hero-card > :last-child { grid-column: 2; grid-row: 1 / 3; text-align: right; font-size: 14px; }
+    #weekChart svg { max-height: 250px; }
+    #dashAccountsContainer { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px !important; }
+    #dashAccountsContainer .id-card { margin-bottom: 0 !important; }
+
+    /* ---------- আইডি লিস্ট ---------- */
+    body #page-ids .top-global-bal { padding: 22px 28px; }
+    body #page-ids .top-global-bal h2 { font-size: 32px !important; }
+    #page-ids .search-sort-bar { gap: 12px; margin-bottom: 16px; }
+    #page-ids .search-sort-bar input { flex: 4; } #page-ids .search-sort-bar select { flex: 1; }
+    body[data-layout="classic"] #idContainer .id-group-list, body[data-layout="compact"] #idContainer .id-group-list {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; margin-bottom: 10px;
+    }
+    body[data-layout="classic"] #idContainer .id-card, body[data-layout="compact"] #idContainer .id-card { margin-bottom: 0; }
+    body[data-layout="classic"] #idContainer .id-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,.22); cursor: pointer; }
+    #idContainer .id-group-header { margin: 26px 0 14px; font-size: 13.5px; }
+
+    /* ---------- সেটিংস: ২ কলাম ---------- */
+    #page-settings.active { display: grid; grid-auto-rows: max-content; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+    #page-settings.active > * { margin: 0 !important; min-width: 0; }
+    #page-settings.active > h2, #page-settings.active > p, #page-settings.active > button { grid-column: 1 / -1; }
+
+    /* ---------- হুইল ক্যালকুলেটর ---------- */
+    .wc-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+    /* ---------- ফ্লোটিং/পপআপ ---------- */
+    .fab { right: 40px; bottom: 36px; width: 58px; height: 58px; }
+    body[data-layout] .fab { bottom: 36px; }
+    #wcChipBar { left: calc(50% + var(--sb-w) / 2) !important; max-width: 720px; width: calc(100% - var(--sb-w) - 80px) !important; bottom: 0 !important; }
+    #toast { bottom: 32px; left: calc(50% + var(--sb-w) / 2); }
+    .modal-content { max-width: 520px; padding: 26px; }
+    #modalAddID .modal-content, #modalWorkSel .modal-content, #modalCatSel .modal-content { max-width: 580px; }
+
+    .page::-webkit-scrollbar { display: block; width: 10px; }
+    .page::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+    .page::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    .page { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+}
 </style>
 <script>
 /* সাজানো চিহ্নের ফন্ট: CSS-এ ব্লক হলেও জাভাস্ক্রিপ্ট দিয়ে লোড হবে */
@@ -2020,8 +2130,6 @@
                             <button class="btn btn-add cloud-btn" style="margin-bottom: 0;" onclick="cloudBackupNow()" id="t-btnCloudBackup">☁️ এখনই ব্যাকআপ নিন</button>
                             <button class="btn btn-update cloud-btn" style="margin-bottom: 0;" onclick="toggleCloudAuto()" id="btnCloudAuto"></button>
                             <p id="cloudAutoInfo" style="font-size: 11px; color: var(--text-muted); margin: 0;"></p>
-                            <button class="btn btn-update cloud-btn" style="margin-bottom: 0;" onclick="toggleLiveSync()" id="btnLiveSync"></button>
-                            <p id="liveSyncInfo" style="font-size: 11px; color: var(--text-muted); margin: 0;"></p>
                             <button class="btn btn-warning cloud-btn" style="margin-bottom: 0;" onclick="cloudRestore()" id="t-btnCloudRestore">📥 ক্লাউড থেকে রিস্টোর করুন</button>
                             <button class="btn btn-close cloud-btn" style="margin-bottom: 0;" onclick="cloudLogout()" id="t-btnCloudLogout">🚪 লগআউট</button>
                         </div>
@@ -2401,16 +2509,6 @@
         <button class="btn btn-add" style="margin-top:12px;" id="wsSave" onclick="saveWorkSel()">সেভ করুন</button>
         <button class="btn btn-update" id="wsAuto" onclick="workSelAuto()">🔄 অটো মোড</button>
         <button class="btn btn-close" id="wsCancel" onclick="closeModal('modalWorkSel')">বাতিল</button>
-    </div>
-</div>
-
-<div id="modalLiveChoice" class="modal">
-    <div class="modal-content" style="text-align: center;">
-        <h3 style="margin-bottom: 10px;" data-bn="🔄 লাইভ সিঙ্ক চালু করছেন" data-en="🔄 Turning on live sync"></h3>
-        <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 13px;" data-bn="ক্লাউডে আগে থেকেই লাইভ সিঙ্কের ডাটা আছে। কোনটা রাখবেন?" data-en="There is already live-sync data in the cloud. Which one do you want to keep?"></p>
-        <button class="btn btn-update" onclick="liveChoose('pull')" data-bn="☁️ ক্লাউডের ডাটা এই ফোনে নিন" data-en="☁️ Take the cloud data onto this phone"></button>
-        <button class="btn btn-warning" onclick="liveChoose('push')" data-bn="📱 এই ফোনের ডাটা ক্লাউডে দিন (ক্লাউডেরটা বদলে যাবে)" data-en="📱 Send this phone's data to the cloud (replaces cloud copy)"></button>
-        <button class="btn btn-close" onclick="closeModal('modalLiveChoice')" data-bn="বাতিল" data-en="Cancel"></button>
     </div>
 </div>
 
@@ -4256,7 +4354,6 @@
                 cloudLastBackupAt = undefined;
                 updateCloudUI();
                 if (user) fetchCloudLastBackup();
-                try { if (typeof liveOnAuth === 'function') liveOnAuth(user); } catch (e) {}
             });
         })();
         fbPromise.catch(function() { fbPromise = null; });
@@ -4454,7 +4551,7 @@
         // ৩) পুরোনো ব্যাকআপের অংশ মুছে ফেলা
         try {
             const snap = await col.get();
-            const olds = snap.docs.filter(function(d) { return d.id !== 'meta' && d.id.indexOf('live_') !== 0 && d.id.indexOf(backupId + '_') !== 0; });
+            const olds = snap.docs.filter(function(d) { return d.id !== 'meta' && d.id.indexOf(backupId + '_') !== 0; });
             for (let i = 0; i < olds.length; i += 400) {
                 const batch = fbDb.batch();
                 olds.slice(i, i + 400).forEach(function(d) { batch.delete(d.ref); });
@@ -6212,7 +6309,6 @@
                 localStorage.removeItem('pro_ledger_data');
                 localStorage.removeItem(FP_KEY);
                 localStorage.removeItem(PIN_GUARD_KEY);
-                ['pro_ledger_live_sync','pro_ledger_live_rev','pro_ledger_live_hash','pro_ledger_live_uid'].forEach(function(k){ localStorage.removeItem(k); });
                 location.reload();
             });
         });
@@ -6996,302 +7092,6 @@ function toggleSetAcc(key) {
     window.updateSettingsSummaries = update;
     setTimeout(update, 300);
     setTimeout(update, 1500);
-})();
-</script>
-
-<script>
-/* ===== লাইভ সিঙ্ক: একই ইমেইলে লগইন থাকা সব ফোনে পরিবর্তন নিজে নিজে চলে আসবে ===== */
-(function () {
-    var LIVE_KEY = 'pro_ledger_live_sync', LIVE_DEV_KEY = 'pro_ledger_live_dev', LIVE_REV_KEY = 'pro_ledger_live_rev',
-        LIVE_HASH_KEY = 'pro_ledger_live_hash', LIVE_UID_KEY = 'pro_ledger_live_uid';
-    // শুধু এই তথ্যগুলো সিঙ্ক হয়। পিন, থিম, ওয়ালপেপার, সাউন্ড প্রতি ফোনে আলাদা থাকে।
-    var LIVE_FIELDS = ['ids', 'sales', 'savedCategories', 'rate', 'coinUnit', 'incomeTarget', 'wheelPresets', 'pending', 'workIds', 'idHide'];
-    var PUSH_DELAY = 4000;
-
-    var liveUnsub = null, liveReady = false, liveApplying = false, livePushTimer = null, livePushing = false;
-    var liveLastStr = '', liveOldCount = 0, liveStatus = '', liveForce = false, liveHandling = false, livePendingMeta = null, liveRetry = null;
-
-    function on() { return localStorage.getItem(LIVE_KEY) === '1'; }
-    function devId() {
-        var d = localStorage.getItem(LIVE_DEV_KEY);
-        if (!d) { d = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem(LIVE_DEV_KEY, d); }
-        return d;
-    }
-    function snapshot() { var o = {}; LIVE_FIELDS.forEach(function (k) { if (appData[k] !== undefined) o[k] = appData[k]; }); return o; }
-    function hashStr(t) { var h = 5381; for (var i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return t.length + ':' + h; }
-    function setLast(str) { liveLastStr = str; try { localStorage.setItem(LIVE_HASH_KEY, hashStr(str)); } catch (e) {} }
-    function setStatus(t) { liveStatus = t; updateUI(); }
-    function timeNow() { try { return new Date().toLocaleTimeString(); } catch (e) { return ''; } }
-
-    function updateUI() {
-        var b = document.getElementById('btnLiveSync'), p = document.getElementById('liveSyncInfo');
-        if (!b || !p) return;
-        var o = on();
-        b.textContent = o ? cl('🔄 লাইভ সিঙ্ক: চালু ✅ (বন্ধ করতে চাপুন)', '🔄 Live sync: ON ✅ (tap to turn off)') : cl('🔄 লাইভ সিঙ্ক চালু করুন', '🔄 Turn on live sync');
-        b.className = 'btn cloud-btn ' + (o ? 'btn-add' : 'btn-update');
-        p.textContent = o ? (liveStatus || cl('সংযোগ হচ্ছে...', 'Connecting...'))
-            : cl('চালু করলে একই ইমেইলে লগইন করা সব ফোনে এক ফোনের পরিবর্তন কয়েক সেকেন্ডে নিজে নিজেই চলে আসবে। পিন, থিম, ওয়ালপেপার, সাউন্ড প্রতি ফোনে আলাদা থাকবে।',
-                 'When on, a change on one phone shows up on every phone logged in with the same email within seconds. PIN, theme, wallpaper and sound stay separate on each phone.');
-    }
-    window.liveUpdateUI = updateUI;
-
-    function stop() {
-        if (liveUnsub) { try { liveUnsub(); } catch (e) {} liveUnsub = null; }
-        clearTimeout(livePushTimer); livePushTimer = null;
-        clearTimeout(liveRetry); liveRetry = null;
-        liveReady = false;
-    }
-
-    function start() {
-        if (liveUnsub || !on() || !fbUser) return;
-        if (localStorage.getItem(LIVE_UID_KEY) && localStorage.getItem(LIVE_UID_KEY) !== fbUser.uid) {
-            // অন্য অ্যাকাউন্টে লগইন করেছেন — আগের সিঙ্ক সেটিং বাতিল
-            localStorage.removeItem(LIVE_KEY); localStorage.removeItem(LIVE_REV_KEY); localStorage.removeItem(LIVE_HASH_KEY); localStorage.removeItem(LIVE_UID_KEY);
-            updateUI();
-            try { showToast(cl('অন্য অ্যাকাউন্ট পাওয়া গেছে, লাইভ সিঙ্ক আবার চালু করুন', 'Different account — please turn live sync on again')); } catch (e) {}
-            return;
-        }
-        localStorage.setItem(LIVE_UID_KEY, fbUser.uid);
-        liveReady = false;
-        setStatus(cl('⏳ সংযোগ হচ্ছে...', '⏳ Connecting...'));
-        var metaRef = cloudCollection().doc('live_meta');
-        liveUnsub = metaRef.onSnapshot(function (snap) {
-            if (snap.metadata.hasPendingWrites) return;
-            if (!snap.exists) {
-                liveOldCount = 0; liveReady = true; liveLastStr = '';
-                schedulePush(300);
-                return;
-            }
-            var m = snap.data();
-            liveOldCount = m.count || 0;
-            handleMeta(m);
-        }, function (err) {
-            setStatus(cl('⚠️ সংযোগে সমস্যা, আবার চেষ্টা হবে', '⚠️ Connection problem, will retry'));
-            stop();
-            liveRetry = setTimeout(start, 20000);
-        });
-    }
-
-    async function handleMeta(m) {
-        if (liveHandling) { livePendingMeta = m; return; }
-        liveHandling = true;
-        try {
-            var cur = m;
-            while (cur) {
-                livePendingMeta = null;
-                await processMeta(cur);
-                cur = livePendingMeta;
-            }
-        } finally { liveHandling = false; }
-    }
-
-    async function processMeta(m) {
-        if (liveForce) {                       // "এই ফোনের ডাটা ক্লাউডে দিন" বেছেছেন
-            liveForce = false; liveReady = true; liveLastStr = '';
-            schedulePush(100);
-            return;
-        }
-        var lastRev = Number(localStorage.getItem(LIVE_REV_KEY) || 0);
-        if (m.device === devId() || m.rev === lastRev) {
-            // এই ফোনেই আগে আপলোড হয়েছে — পরিবর্তন না থাকলে কিছু করার নেই
-            if (!liveLastStr) {
-                var cs = JSON.stringify(snapshot());
-                if (localStorage.getItem(LIVE_HASH_KEY) === hashStr(cs)) liveLastStr = cs;
-            }
-            liveReady = true;
-            setStatus(cl('🟢 লাইভ সিঙ্ক চালু • ', '🟢 Live sync ON • ') + timeNow());
-            checkDirty();
-            return;
-        }
-        setStatus(cl('⬇️ অন্য ফোনের পরিবর্তন আনা হচ্ছে...', '⬇️ Getting changes from another phone...'));
-        var data = await fetchLive(m);
-        if (!data) {
-            setStatus(cl('⚠️ ডাটা আনা যায়নি, আবার চেষ্টা হবে', '⚠️ Could not fetch, will retry'));
-            clearTimeout(liveRetry);
-            liveRetry = setTimeout(function () { stop(); start(); }, 10000);
-            return;
-        }
-        applyRemote(data, m.rev);
-        liveReady = true;
-        setStatus(cl('🟢 অন্য ফোনের পরিবর্তন এসেছে • ', '🟢 Updated from another phone • ') + timeNow());
-    }
-
-    async function fetchLive(m) {
-        for (var t = 0; t < 4; t++) {
-            try {
-                var col = cloudCollection(), arr = [];
-                for (var i = 0; i < m.count; i++) arr.push(col.doc('live_c' + i).get());
-                var snaps = await Promise.all(arr), ok = true, text = '';
-                for (var j = 0; j < snaps.length; j++) {
-                    if (!snaps[j].exists || snaps[j].data().rev !== m.rev) { ok = false; break; }
-                    text += snaps[j].data().text;
-                }
-                if (ok) {
-                    try { var d = JSON.parse(text); if (d && Array.isArray(d.ids)) return d; } catch (e) {}
-                    return null;
-                }
-            } catch (e) {}
-            await new Promise(function (r) { setTimeout(r, 1500); });
-        }
-        return null;
-    }
-
-    function applyRemote(data, rev) {
-        liveApplying = true;
-        try {
-            LIVE_FIELDS.forEach(function (k) { if (k in data) appData[k] = data[k]; else delete appData[k]; });
-            normalizeData();
-            saveData();
-            setLast(JSON.stringify(snapshot()));
-            localStorage.setItem(LIVE_REV_KEY, String(rev));
-            refreshAfterRemote();
-        } finally { liveApplying = false; }
-    }
-
-    function refreshAfterRemote() {
-        try { updateCategoryDatalist(); } catch (e) {}
-        try { refreshViews(); renderSalesList(); } catch (e) {}
-        try {
-            var ri = document.getElementById('coinRateInput'); if (ri && document.activeElement !== ri) ri.value = appData.rate;
-            var dr = document.getElementById('displayRate'); if (dr) dr.textContent = formatBD(appData.rate);
-            var us = document.getElementById('coinUnitSelect'); if (us) us.value = appData.coinUnit || 100000;
-            var ti = document.getElementById('incTargetInput'); if (ti && document.activeElement !== ti) ti.value = appData.incomeTarget || '';
-        } catch (e) {}
-        try { if (window.wcReloadFromApp) window.wcReloadFromApp(); } catch (e) {}
-        try {
-            var det = document.getElementById('page-id-detail');
-            if (currentOpenId != null && det && det.classList.contains('active')) {
-                if (appData.ids.some(function (a) { return a.id === currentOpenId; })) openIdDetail(currentOpenId);
-                else closeIdDetail();
-            }
-        } catch (e) {}
-        try { updateAlerts(); } catch (e) {}
-    }
-
-    function checkDirty() {
-        if (!on() || !fbUser || !liveReady || liveApplying) return;
-        if (JSON.stringify(snapshot()) !== liveLastStr) schedulePush(PUSH_DELAY);
-    }
-    function schedulePush(ms) {
-        clearTimeout(livePushTimer);
-        livePushTimer = setTimeout(push, ms);
-    }
-
-    async function push() {
-        livePushTimer = null;
-        if (!on() || !fbUser || !liveReady || liveApplying) return;
-        if (livePushing) { schedulePush(1500); return; }
-        var str = JSON.stringify(snapshot());
-        if (str === liveLastStr) return;
-        if (navigator.onLine === false) { setStatus(cl('📴 ইন্টারনেট নেই — নেট এলে সিঙ্ক হবে', '📴 Offline — will sync when online')); return; }
-        livePushing = true;
-        setStatus(cl('⬆️ আপলোড হচ্ছে...', '⬆️ Uploading...'));
-        try {
-            await ensureFirebase();
-            var col = cloudCollection(), rev = Date.now(), chunks = splitTextSafe(str, CLOUD_CHUNK_SIZE);
-            for (var i = 0; i < chunks.length; i += 8) {
-                var batch = fbDb.batch();
-                chunks.slice(i, i + 8).forEach(function (text, j) { batch.set(col.doc('live_c' + (i + j)), { rev: rev, i: i + j, text: text }); });
-                await batch.commit();
-            }
-            await col.doc('live_meta').set({ rev: rev, count: chunks.length, device: devId(), updatedAt: new Date().toISOString() });
-            localStorage.setItem(LIVE_REV_KEY, String(rev));
-            setLast(str);
-            if (liveOldCount > chunks.length) {
-                var b2 = fbDb.batch();
-                for (var k = chunks.length; k < liveOldCount; k++) b2.delete(col.doc('live_c' + k));
-                try { await b2.commit(); } catch (e) {}
-            }
-            liveOldCount = chunks.length;
-            setStatus(cl('🟢 লাইভ সিঙ্ক চালু • সেভ হয়েছে ', '🟢 Live sync ON • saved ') + timeNow());
-        } catch (e) {
-            setStatus(cl('⚠️ আপলোড হয়নি, আবার চেষ্টা হবে', '⚠️ Upload failed, will retry'));
-            schedulePush(15000);
-        } finally {
-            livePushing = false;
-        }
-        checkDirty();
-    }
-
-    // ---- বাইরে থেকে ডাকা ফাংশন ----
-    window.liveOnAuth = function (user) {
-        if (user && on()) start();
-        else if (!user) { stop(); updateUI(); }
-    };
-
-    window.toggleLiveSync = async function () {
-        if (!fbUser) { showStandardAlert(cl('আগে লগইন করুন!', 'Please log in first!')); return; }
-        if (on()) {
-            localStorage.removeItem(LIVE_KEY);
-            stop(); liveStatus = '';
-            updateUI();
-            showToast(cl('লাইভ সিঙ্ক বন্ধ করা হয়েছে', 'Live sync turned off'));
-            return;
-        }
-        try {
-            await ensureFirebase();
-            var s = await cloudCollection().doc('live_meta').get();
-            if (!s.exists) {
-                localStorage.setItem(LIVE_KEY, '1'); localStorage.removeItem(LIVE_REV_KEY); localStorage.removeItem(LIVE_HASH_KEY);
-                liveForce = false; liveLastStr = '';
-                updateUI(); start();
-                showToast(cl('লাইভ সিঙ্ক চালু হয়েছে', 'Live sync turned on'));
-            } else {
-                window._liveMeta = s.data();
-                openModal('modalLiveChoice');
-            }
-        } catch (e) {
-            showStandardAlert(cloudErrorText(e));
-        }
-    };
-
-    window.liveChoose = async function (mode) {
-        closeModal('modalLiveChoice');
-        try {
-            // নিরাপত্তার জন্য এই ফোনের বর্তমান ডাটার একটা কপি রেখে দেওয়া
-            try { localStorage.setItem('pro_ledger_pre_sync_backup', JSON.stringify(snapshot())); } catch (e) {}
-            localStorage.removeItem(LIVE_REV_KEY); localStorage.removeItem(LIVE_HASH_KEY);
-            if (mode === 'pull') {
-                var m = window._liveMeta;
-                setStatus(cl('⬇️ ক্লাউড থেকে ডাটা আনা হচ্ছে...', '⬇️ Getting data from the cloud...'));
-                var data = await fetchLive(m);
-                if (!data) { showStandardAlert(cl('ক্লাউডের ডাটা আনা যায়নি। আবার চেষ্টা করুন।', 'Could not get the cloud data. Please try again.')); return; }
-                applyRemote(data, m.rev);
-                localStorage.setItem(LIVE_KEY, '1');
-                liveForce = false;
-            } else {
-                localStorage.setItem(LIVE_KEY, '1');
-                liveForce = true;
-            }
-            updateUI(); start();
-            showToast(cl('লাইভ সিঙ্ক চালু হয়েছে', 'Live sync turned on'));
-        } catch (e) {
-            showStandardAlert(cloudErrorText(e));
-        }
-    };
-
-    // ---- বিদ্যমান ফাংশনে হুক ----
-    var _save = saveData;
-    saveData = function () {
-        var r = _save.apply(this, arguments);
-        try { if (!liveApplying) checkDirty(); } catch (e) {}
-        return r;
-    };
-    var _ucu = updateCloudUI;
-    updateCloudUI = function () {
-        var r = _ucu.apply(this, arguments);
-        try { updateUI(); } catch (e) {}
-        return r;
-    };
-
-    window.addEventListener('online', function () { if (on() && fbUser) { if (!liveUnsub) start(); else checkDirty(); } });
-    document.addEventListener('visibilitychange', function () {
-        if (document.visibilityState === 'hidden' && on() && livePushTimer) { clearTimeout(livePushTimer); push(); }
-        else if (document.visibilityState === 'visible' && on() && fbUser && !liveUnsub) start();
-    });
-
-    updateUI();
-    if (fbUser && on()) start();
 })();
 </script>
 </body>
