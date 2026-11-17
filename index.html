@@ -2125,7 +2125,8 @@
 
                     <div id="cloudLoggedIn" style="display: none;">
                         <p id="cloudUserLabel" style="font-size: 12px; font-weight: 600; margin-bottom: 2px;"></p>
-                        <p id="cloudLastBackup" style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;"></p>
+                        <p id="cloudLastBackup" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;"></p>
+                        <p id="liveSyncStatus" style="font-size: 12px; font-weight: 700; margin-bottom: 12px;"></p>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             <button class="btn btn-add cloud-btn" style="margin-bottom: 0;" onclick="cloudBackupNow()" id="t-btnCloudBackup">☁️ এখনই ব্যাকআপ নিন</button>
                             <button class="btn btn-update cloud-btn" style="margin-bottom: 0;" onclick="toggleCloudAuto()" id="btnCloudAuto"></button>
@@ -3677,6 +3678,7 @@
     function saveData() {
         localStorage.setItem('pro_ledger_data', JSON.stringify(appData));
         try { cloudAutoSchedule(); } catch (e) {}
+        try { if (typeof liveSyncChanged === 'function') liveSyncChanged(); } catch (e) {}
     }
     try { localStorage.removeItem('pro_ledger_autobackups'); } catch (e) {}
 
@@ -4354,6 +4356,7 @@
                 cloudLastBackupAt = undefined;
                 updateCloudUI();
                 if (user) fetchCloudLastBackup();
+                try { if (user) liveSyncStart(user); else liveSyncStop(); } catch (e) {}
             });
         })();
         fbPromise.catch(function() { fbPromise = null; });
@@ -4551,7 +4554,7 @@
         // ৩) পুরোনো ব্যাকআপের অংশ মুছে ফেলা
         try {
             const snap = await col.get();
-            const olds = snap.docs.filter(function(d) { return d.id !== 'meta' && d.id.indexOf(backupId + '_') !== 0; });
+            const olds = snap.docs.filter(function(d) { return d.id !== 'meta' && d.id.indexOf('live_') !== 0 && d.id.indexOf(backupId + '_') !== 0; });
             for (let i = 0; i < olds.length; i += 400) {
                 const batch = fbDb.batch();
                 olds.slice(i, i + 400).forEach(function(d) { batch.delete(d.ref); });
@@ -4660,6 +4663,7 @@
                         return;
                     }
 
+                    ['syncHash', 'syncKt', 'syncDel', 'syncInit', 'syncUid'].forEach(function (k) { if (appData[k] !== undefined) parsed[k] = appData[k]; else delete parsed[k]; });
                     appData = parsed;
                     normalizeData();
                     if (!appData.navOrder) appData.navOrder = ['dash', 'ids', 'income', 'reports', 'settings'];
@@ -7094,5 +7098,268 @@ function toggleSetAcc(key) {
     setTimeout(update, 1500);
 })();
 </script>
+<script>
+/* ===================== লাইভ সিঙ্ক (একই ইমেইলের সব ডিভাইসে সাথে সাথে আপডেট) =====================
+   - ক্লাউড ব্যাকআপের একই জায়গায় (backups/{uid}/data) 'live_' নামের ডকুমেন্টে ডাটা থাকে, তাই নতুন Rules লাগে না
+   - প্রতিটি আইডি/বিক্রয়/সেটিং আলাদা সময়-ছাপসহ মার্জ হয়, তাই দুই ডিভাইসে একসাথে কাজ করলেও কিছু হারায় না
+   - থিম, লেআউট, ওয়ালপেপার, পিন ইত্যাদি প্রতিটি ডিভাইসে আলাদা থাকে (পিসি ও ফোনের লুক আলাদা রাখতে) */
+(function () {
+    'use strict';
+    var SYNC_KEYS = ['rate', 'coinUnit', 'incomeTarget', 'savedCategories', 'pending', 'workIds', 'idHide', 'excludeHidden', 'idSub', 'wheelPresets'];
+    var COLLS = ['ids', 'sales'];
+    var CH = 180000, DEL_TTL = 30 * 86400000;
+    var devId = localStorage.getItem('pro_ledger_dev');
+    if (!devId) { devId = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); localStorage.setItem('pro_ledger_dev', devId); }
+    var st = { on: false, uid: null, unsub: null, ready: false, loading: false, applying: false, pushing: false, dirty: false, pushT: null,
+               myRev: null, appliedRev: null, latestMeta: null, lastText: null, maxCount: 1, lastAt: 0, err: '' };
+
+    function col() { return fbDb.collection('backups').doc(st.uid).collection('data'); }
+    function ss(v, u) {
+        if (v === null || v === undefined) return 'null';
+        if (typeof v !== 'object') return JSON.stringify(v);
+        if (Array.isArray(v)) return '[' + v.map(function (x) { return ss(x, u); }).join(',') + ']';
+        var k = Object.keys(v).sort(), o = [];
+        for (var i = 0; i < k.length; i++) { if (!u && k[i] === '_u') continue; if (v[k[i]] === undefined) continue; o.push(JSON.stringify(k[i]) + ':' + ss(v[k[i]], u)); }
+        return '{' + o.join(',') + '}';
+    }
+    function hs(s) { var a = 0xdeadbeef, b = 0x41c6ce57; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); } a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909); b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909); return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36); }
+    function ensureMeta() { if (!appData.syncHash) appData.syncHash = {}; if (!appData.syncKt) appData.syncKt = {}; if (!appData.syncDel) appData.syncDel = {}; }
+    function keyVal(k) { return k === '__order' ? appData.ids.map(function (a) { return String(a.id); }) : (appData[k] === undefined ? null : appData[k]); }
+    function allKeys() { return SYNC_KEYS.concat(['__order']); }
+    function guessU(c, r) {
+        var t = 0;
+        if (c === 'sales') t = Date.parse(r.collectedDate || r.date) || 0;
+        else { t = Date.parse(r.lastUpdated) || 0; (r.transactions || []).forEach(function (x) { var d = Date.parse(x.date) || 0; if (d > t) t = d; }); if (!t) t = Number(r.id) || 0; }
+        return t || 0;
+    }
+
+    // লোকাল পরিবর্তন খুঁজে সময়-ছাপ বসানো, মুছে ফেলা জিনিসের টম্বস্টোন রাখা
+    function collectLocal() {
+        ensureMeta();
+        var now = Date.now(), first = !appData.syncInit, H = appData.syncHash;
+        COLLS.forEach(function (c) {
+            var seen = {};
+            (appData[c] || []).forEach(function (r) {
+                var key = c + ':' + String(r.id), hh = hs(ss(r)); seen[key] = 1;
+                if (H[key] !== hh) { r._u = first ? (r._u || guessU(c, r)) : now; H[key] = hh; }
+                else if (!r._u) r._u = guessU(c, r);
+            });
+            Object.keys(H).forEach(function (key) { if (key.indexOf(c + ':') === 0 && !seen[key]) { appData.syncDel[key] = now; delete H[key]; } });
+        });
+        allKeys().forEach(function (k) {
+            var hk = 'k:' + k, hh = hs(ss(keyVal(k)));
+            if (H[hk] !== hh) { appData.syncKt[k] = (first && H[hk] === undefined) ? (appData.syncKt[k] || 0) : now; H[hk] = hh; }
+        });
+        appData.syncInit = true;
+    }
+    function build() {
+        ensureMeta();
+        var p = { v: 1, recs: { ids: {}, sales: {} }, keys: {}, del: appData.syncDel };
+        COLLS.forEach(function (c) { (appData[c] || []).forEach(function (r) { p.recs[c][String(r.id)] = r; }); });
+        allKeys().forEach(function (k) { p.keys[k] = { v: keyVal(k), t: appData.syncKt[k] || 0 }; });
+        return p;
+    }
+    function fix(p) { p.recs = p.recs || {}; p.recs.ids = p.recs.ids || {}; p.recs.sales = p.recs.sales || {}; p.keys = p.keys || {}; p.del = p.del || {}; return p; }
+    function merge(L, R) {
+        L = fix(L); R = fix(R);
+        var M = { v: 1, recs: { ids: {}, sales: {} }, keys: {}, del: {} }, del = M.del;
+        [L.del, R.del].forEach(function (d) { Object.keys(d).forEach(function (k) { if (!(del[k] >= d[k])) del[k] = d[k]; }); });
+        COLLS.forEach(function (c) {
+            var a = L.recs[c], b = R.recs[c], out = M.recs[c], ids = {};
+            Object.keys(a).forEach(function (i) { ids[i] = 1; }); Object.keys(b).forEach(function (i) { ids[i] = 1; });
+            Object.keys(ids).forEach(function (i) {
+                var x = a[i], y = b[i], w;
+                if (x && y) { var ux = x._u || 0, uy = y._u || 0; w = ux > uy ? x : (uy > ux ? y : (ss(x, 1) >= ss(y, 1) ? x : y)); } else w = x || y;
+                var d = del[c + ':' + i];
+                if (d !== undefined) { if (d >= (w._u || 0)) return; delete del[c + ':' + i]; }
+                out[i] = w;
+            });
+        });
+        var lim = Date.now() - DEL_TTL; Object.keys(del).forEach(function (k) { if (del[k] < lim) delete del[k]; });
+        var ks = {}; Object.keys(L.keys).concat(Object.keys(R.keys)).forEach(function (k) { ks[k] = 1; });
+        Object.keys(ks).forEach(function (k) {
+            var x = L.keys[k], y = R.keys[k];
+            if (!x || !y) { M.keys[k] = x || y; return; }
+            M.keys[k] = x.t > y.t ? x : (y.t > x.t ? y : (ss(x.v) >= ss(y.v) ? x : y));
+        });
+        return M;
+    }
+    function applyMerged(M) {
+        M = JSON.parse(JSON.stringify(M)); ensureMeta();
+        var ord = (M.keys.__order && M.keys.__order.v) || [], pos = {};
+        ord.forEach(function (id, i) { pos[String(id)] = i; });
+        var ids = Object.keys(M.recs.ids).map(function (i) { return M.recs.ids[i]; });
+        ids.sort(function (a, b) { var pa = pos[String(a.id)], pb = pos[String(b.id)]; pa = pa === undefined ? 1e9 : pa; pb = pb === undefined ? 1e9 : pb; return (pa - pb) || (Number(a.id) - Number(b.id)); });
+        var sales = Object.keys(M.recs.sales).map(function (i) { return M.recs.sales[i]; }).sort(function (a, b) { return Number(a.id) - Number(b.id); });
+        appData.ids = ids; appData.sales = sales;
+        SYNC_KEYS.forEach(function (k) {
+            var e = M.keys[k]; if (!e) return;
+            if (e.v === null || e.v === undefined) delete appData[k]; else appData[k] = e.v;
+            appData.syncKt[k] = e.t || 0;
+        });
+        if (M.keys.__order) appData.syncKt.__order = M.keys.__order.t || 0;
+        appData.syncDel = M.del;
+        normalizeData();
+        var H = {};
+        COLLS.forEach(function (c) { (appData[c] || []).forEach(function (r) { H[c + ':' + String(r.id)] = hs(ss(r)); }); });
+        allKeys().forEach(function (k) { H['k:' + k] = hs(ss(keyVal(k))); });
+        appData.syncHash = H; appData.syncInit = true;
+    }
+
+    function refreshUI(wheelChanged) {
+        if (typeof d_isDragging !== 'undefined' && d_isDragging) { setTimeout(function () { refreshUI(wheelChanged); }, 600); return; }
+        try { updateCategoryDatalist(); refreshViews(); renderSalesList(); } catch (e) {}
+        try {
+            var det = document.getElementById('page-id-detail');
+            if (currentOpenId != null && det && det.classList.contains('active')) {
+                if (appData.ids.some(function (a) { return a.id === currentOpenId; })) openIdDetail(currentOpenId); else closeIdDetail();
+            }
+        } catch (e) {}
+        try { updateAlerts(); } catch (e) {}
+        try { if (wheelChanged && window.wcReloadFromApp) window.wcReloadFromApp(); } catch (e) {}
+    }
+
+    function ui() {
+        var el = document.getElementById('liveSyncStatus'); if (!el) return;
+        var t, c;
+        if (!st.on) { t = cl('লাইভ সিঙ্ক: লগইন করলে নিজে চালু হবে', 'Live sync: starts automatically after login'); c = 'var(--text-muted)'; }
+        else if (st.err) { t = '🔴 ' + st.err; c = 'var(--danger)'; }
+        else if (!st.ready) { t = '⏳ ' + cl('সংযোগ হচ্ছে…', 'Connecting…'); c = 'var(--warning)'; }
+        else if (st.pushing || st.dirty || st.pushT) { t = '⏳ ' + cl('সিঙ্ক হচ্ছে…', 'Syncing…'); c = 'var(--warning)'; }
+        else { t = '🟢 ' + cl('লাইভ সিঙ্ক চালু — একই ইমেইলের সব ডিভাইসে সাথে সাথে আপডেট হবে', 'Live sync ON — every device on this email updates instantly') + (st.lastAt ? ' • ' + new Date(st.lastAt).toLocaleTimeString() : ''); c = 'var(--success)'; }
+        el.textContent = t; el.style.color = c;
+    }
+    function errText(e) {
+        var code = (e && e.code) || '';
+        if (code === 'permission-denied') return cl('অনুমতি নেই — Firebase Rules ঠিক আছে কিনা দেখুন', 'Permission denied — check the Firebase Rules');
+        return cl('সিঙ্ক সমস্যা: ', 'Sync problem: ') + (code || (e && e.message) || '');
+    }
+
+    function schedulePush(ms) {
+        if (!st.on) return;
+        clearTimeout(st.pushT); st.pushT = setTimeout(function () { st.pushT = null; doPush(); }, ms == null ? 300 : ms); ui();
+    }
+    function doPush() {
+        if (!st.on || !st.ready || st.applying) return;
+        if (st.pushing) { st.dirty = true; return; }
+        collectLocal();
+        try { localStorage.setItem('pro_ledger_data', JSON.stringify(appData)); } catch (e) {}
+        var text = JSON.stringify(build());
+        if (text === st.lastText) { ui(); return; }
+        var chunks = splitTextSafe(text, CH), rev = Date.now().toString(36) + Math.random().toString(36).slice(2, 6), c = col(), b = fbDb.batch();
+        b.set(c.doc('live_meta'), { rev: rev, count: chunks.length, writer: devId, ts: Date.now(), c0: chunks[0] });
+        for (var i = 1; i < chunks.length; i++) b.set(c.doc('live_c' + i), { rev: rev, i: i, text: chunks[i] });
+        for (var j = chunks.length; j < st.maxCount; j++) b.delete(c.doc('live_c' + j));
+        st.maxCount = Math.max(chunks.length, 1); st.myRev = rev; st.lastText = text; st.pushing = true; st.err = ''; ui();
+        b.commit().then(function () {
+            st.pushing = false; st.lastAt = Date.now();
+            if (st.dirty) { st.dirty = false; schedulePush(30); }
+            ui();
+        }).catch(function (e) {
+            st.pushing = false; st.lastText = null; st.err = errText(e); ui();
+            setTimeout(function () { st.err = ''; schedulePush(0); }, 6000);
+        });
+    }
+
+    function applyRemote(R, rev) {
+        st.applying = true;
+        try {
+            collectLocal();
+            var L = build(), M = merge(L, R);
+            var oldWheel = ss(appData.wheelPresets);
+            applyMerged(M);
+            st.appliedRev = rev;
+            try { localStorage.setItem('pro_ledger_data', JSON.stringify(appData)); } catch (e) {}
+            var needPush = ss(M, 1) !== ss(fix(JSON.parse(JSON.stringify(R))), 1);
+            st.lastText = needPush ? null : JSON.stringify(build());
+            st.lastAt = Date.now();
+            refreshUI(oldWheel !== ss(appData.wheelPresets));
+            st.applying = false;
+            if (needPush) schedulePush(0);
+        } finally { st.applying = false; }
+    }
+    function loadAndApply(tries) {
+        var m = st.latestMeta; if (!m || st.loading) return;
+        if (m.rev === st.appliedRev || m.rev === st.myRev) { st.ready = true; ui(); return; }
+        st.loading = true;
+        var ps = []; for (var i = 1; i < (m.count || 1); i++) ps.push(col().doc('live_c' + i).get());
+        Promise.all(ps).then(function (snaps) {
+            var parts = [m.c0 || ''];
+            snaps.forEach(function (s) { if (!s.exists || s.data().rev !== m.rev) throw new Error('stale'); parts.push(s.data().text); });
+            var R = JSON.parse(parts.join(''));
+            if (!R || !R.recs) throw new Error('bad');
+            applyRemote(R, m.rev);
+            st.ready = true; st.loading = false; st.err = ''; ui();
+            if (st.latestMeta && st.latestMeta.rev !== m.rev) loadAndApply(0);
+            else if (st.ready) schedulePush(0);
+        }).catch(function (e) {
+            st.loading = false;
+            if ((tries || 0) < 6) setTimeout(function () { loadAndApply((tries || 0) + 1); }, 350 * ((tries || 0) + 1));
+            else { st.err = errText(e); ui(); }
+        });
+    }
+
+    function start(user) {
+        if (!user || typeof fbDb === 'undefined' || !fbDb) return;
+        if (st.on && st.uid === user.uid) return;
+        stop();
+        ensureMeta();
+        if (appData.syncUid && appData.syncUid !== user.uid) { appData.syncHash = {}; appData.syncKt = {}; appData.syncDel = {}; appData.syncInit = false; }
+        appData.syncUid = user.uid;
+        st.uid = user.uid; st.on = true; st.ready = false; st.err = ''; st.appliedRev = null; st.myRev = null; st.lastText = null;
+        ui();
+        st.unsub = col().doc('live_meta').onSnapshot(function (snap) {
+            if (snap.metadata.hasPendingWrites) return;
+            if (!snap.exists) {
+                if (snap.metadata.fromCache) return;
+                st.ready = true; st.err = '';
+                if (appData.ids.length || appData.sales.length) schedulePush(0);
+                ui(); return;
+            }
+            var m = snap.data(); st.maxCount = Math.max(st.maxCount, m.count || 1); st.latestMeta = m; st.err = '';
+            loadAndApply(0);
+        }, function (e) { st.err = errText(e); ui(); });
+    }
+    function stop() {
+        if (st.unsub) { try { st.unsub(); } catch (e) {} }
+        st.unsub = null; st.on = false; st.ready = false; clearTimeout(st.pushT); st.pushT = null; st.pushing = false; st.loading = false; ui();
+    }
+
+    window.liveSyncStart = start;
+    window.liveSyncStop = stop;
+    window.liveSyncChanged = function () { if (st.on && !st.applying) schedulePush(); };
+    window.__lsync = { merge: merge, build: build, collectLocal: collectLocal, applyMerged: applyMerged, st: st, ss: ss };
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && st.on && st.ready) { clearTimeout(st.pushT); st.pushT = null; doPush(); } });
+    window.addEventListener('online', function () { if (st.on) schedulePush(0); });
+    setInterval(ui, 5000);
+})();
+</script>
+
+<script>
+/* পিসিতে কীবোর্ড (↑ ↓ PageUp PageDown Space) দিয়ে স্ক্রল: ট্যাব বদলালেই সক্রিয় পেজে নিজে ফোকাস যাবে */
+(function () {
+    var pages = document.querySelectorAll('.page');
+    pages.forEach(function (p) { p.setAttribute('tabindex', '-1'); p.style.outline = 'none'; });
+    function typing() {
+        var a = document.activeElement;
+        return a && a !== document.body && (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(a.tagName) || a.isContentEditable);
+    }
+    function focusPage() {
+        if (typing()) return;
+        if (document.querySelector('.modal.show')) return;
+        var p = document.querySelector('.page.active');
+        if (p && document.activeElement !== p) { try { p.focus({ preventScroll: true }); } catch (e) {} }
+    }
+    var t = null;
+    function later() { clearTimeout(t); t = setTimeout(focusPage, 30); }
+    pages.forEach(function (p) { new MutationObserver(later).observe(p, { attributes: true, attributeFilter: ['class'] }); });
+    document.querySelectorAll('.modal').forEach(function (m) { new MutationObserver(later).observe(m, { attributes: true, attributeFilter: ['class'] }); });
+    document.addEventListener('click', later, true);
+    window.addEventListener('focus', later);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) later(); });
+    later();
+})();
+</script>
+
 </body>
 </html>
