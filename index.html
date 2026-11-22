@@ -2118,6 +2118,13 @@ body.is-scrolling :is(.svip-inline,.top-global-bal)::after{animation-play-state:
                     <input type="number" id="coinRateInput" value="150" oninput="updateRate(this.value)">
                     <p style="font-size:11px; color:var(--text-muted); margin-top:6px;"><span data-bn="বর্তমান রেট:" data-en="Current rate:"></span> ৳ <span id="displayRate">150</span></p>
                 </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div style="min-width:0;">
+                        <div style="font-size:13px; font-weight:600;" data-bn="💰 কয়েনের নিচে টাকার দাম দেখান" data-en="💰 Show Taka value under coins"></div>
+                        <p style="font-size:11px; color:var(--text-muted); margin-top:3px;" data-bn="যেখানে কয়েনের পরিমাণ দেখায় তার নিচে রেট অনুযায়ী ৳ দাম দেখাবে।" data-en="Shows the ৳ value (by current rate) below coin amounts."></p>
+                    </div>
+                    <div class="sfx-sw" id="tkSw" onclick="pxTkToggle()"><i></i></div>
+                </div>
             </div>
         </div>
 
@@ -5231,7 +5238,7 @@ body.is-scrolling :is(.svip-inline,.top-global-bal)::after{animation-play-state:
                 <div class="id-info">
                     <img src="${avatarOf(acc)}" class="id-avatar" style="width:34px; height:34px;" alt="Avatar">
                     <div>
-                        <h4 style="font-size: 13px;">${esc(acc.name)}${acc.svip ? '<i class="svip-inline sm' + svipExpCls(acc) + '" title="SVIP"></i>' : ''}${cloneTagHtml(acc, true)}</h4>
+                        <h4 style="font-size: 13px;"><span class="px-nm">${esc(acc.name)}</span>${acc.svip ? '<i class="svip-inline sm' + svipExpCls(acc) + '" title="SVIP"></i>' : ''}${cloneTagHtml(acc, true)}</h4>
                         <p style="font-size: 10px; color: var(--text-muted);">✉️ ${esc(acc.email) || cl('কোনো ইমেইল নেই', 'No email')}</p>
                     </div>
                 </div>
@@ -7620,13 +7627,14 @@ function toggleSetAcc(key) {
       linear-gradient(var(--surface-light), var(--surface-light)) padding-box,
       conic-gradient(from var(--av-a), transparent 0 60%, var(--av-c) 88%, #fff 100%) border-box,
       linear-gradient(var(--primary-glow), var(--primary-glow)) border-box;
-    animation: pxOrbit 4.5s linear infinite, pxHalo 3.2s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--primary-glow);
+    animation: pxOrbit 5s steps(50) infinite;
   }
   .id-card.updated-today .id-avatar { --av-c: #10b981; }
   .id-card.has-pend .id-avatar { --av-c: #ef4444; }
-  .id-card:nth-child(2n) .id-avatar { animation-delay: -1.3s, -.9s; }
-  .id-card:nth-child(3n) .id-avatar { animation-delay: -2.7s, -2s; }
-  .id-card:nth-child(5n) .id-avatar { animation-delay: -3.6s, -1.4s; }
+  .id-card:nth-child(2n) .id-avatar { animation-delay: -1.3s; }
+  .id-card:nth-child(3n) .id-avatar { animation-delay: -2.7s; }
+  .id-card:nth-child(5n) .id-avatar { animation-delay: -3.6s; }
   body[data-layout="magazine"] #idContainer .id-avatar { animation: none; }
 
   /* মোডাল: খোলার সময় হালকা স্প্রিং পপ */
@@ -7648,6 +7656,36 @@ function toggleSetAcc(key) {
 /* চাপ দিলে স্প্রিং ফিডব্যাক */
 .btn:active { transform: scale(.96); }
 .mini-btn:active, .tx-btn:active, .dash-filter button:active, .pro-card[onclick]:active, .stat-box[onclick]:active { transform: scale(.96); }
+
+/* ===== আইডির নাম ও ব্যালেন্স: রংধনু-গ্রেডিয়েন্ট ফ্লো (ভিডিওর মতো) ===== */
+@keyframes pxFlow { to { background-position: 200% 0; } }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  :is(#idContainer .id-nm, .ws-nm, #detailName, #detailNameBig, .px-nm, .dock-focus h3, .soon-row .sn, .pn h4,
+      .id-bal h4, #detailBal, .ws-bal, .dk-bal, #globalDashBal, #globalIdBal) {
+    background-image: linear-gradient(90deg, #7c3aed, #d946ef, #fb923c, #facc15, #84cc16, #22d3ee, #3b82f6, #7c3aed);
+    background-size: 200% 100%;
+    background-repeat: repeat-x;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: pxFlow 8s steps(96) infinite;
+  }
+  :is(#detailName, #detailNameBig, .dock-focus h3) { filter: drop-shadow(0 0 4px rgba(255,255,255,.35)); }
+  .id-flag { -webkit-text-fill-color: initial; }
+}
+
+/* ===== পারফরম্যান্স: স্ক্রল করার সময় ও অনেক আইডি থাকলে/দুর্বল ফোনে এনিমেশন থামে ===== */
+body.px-scrolling :is(.id-card .id-avatar, #idContainer .id-nm, .ws-nm, .px-nm, .id-bal h4, .ws-bal, .dk-bal, #detailName, #detailNameBig, #detailBal, #globalDashBal, #globalIdBal, .dock-focus h3, .soon-row .sn, .pn h4) { animation-play-state: paused !important; }
+body.px-many :is(.id-card .id-avatar, #idContainer .id-nm, .ws-nm, .px-nm, .id-bal h4, .ws-bal) { animation: none !important; }
+body.px-lite :is(.id-card .id-avatar, #idContainer .id-nm, .ws-nm, .px-nm, .id-bal h4, .ws-bal, .dk-bal, .soon-row .sn, .pn h4) { animation: none !important; }
+
+/* ===== কয়েনের নিচে টাকার দাম ===== */
+.px-tk { font-size: 10.5px; font-weight: 600; color: var(--text-muted); -webkit-text-fill-color: var(--text-muted); line-height: 1.3; margin-top: 1px; white-space: nowrap; letter-spacing: 0; filter: none; background: none; }
+.ws-bal .px-tk { display: block; font-size: 9.5px; }
+.dock-focus .px-tk { font-size: 13px; margin-top: 2px; position: relative; }
+#detailBal + .px-tk { font-size: 13px; margin-top: 4px; color: rgba(255,255,255,.9); -webkit-text-fill-color: rgba(255,255,255,.9); }
+body.px-tk-off .px-tk { display: none !important; }
+body.privacy .px-tk { filter: blur(8px); user-select: none; }
+#idContainer.compact .px-tk, body[data-layout="stack"] #idContainer .px-tk { display: none; }
 </style>
 <script>
 (function () {
@@ -7674,6 +7712,68 @@ function toggleSetAcc(key) {
       navigator.serviceWorker.register('sw.js').catch(function () {});
     }
   });
+})();
+</script>
+
+<script>
+(function () {
+  function on() { return appData.showTk !== false; }
+  function calc(v) { var u = appData.coinUnit || 100000, r = appData.rate || 0; return '≈ ৳ ' + fmtTk((v / u) * r); }
+  function num(t) { var v = parseFloat(String(t).replace(/,/g, '').replace(/[^0-9.\-]/g, '')); return isNaN(v) ? null : v; }
+  function put(el, v) {
+    var n = el.nextElementSibling;
+    if (!n || !n.classList.contains('px-tk')) { n = document.createElement('div'); n.className = 'px-tk'; el.parentNode.insertBefore(n, el.nextSibling); }
+    var t = calc(v); if (n.textContent !== t) n.textContent = t;
+  }
+  function putIn(el) {
+    var f = el.firstChild; if (!f || f.nodeType !== 3) return;
+    var v = num(f.nodeValue); if (v === null) return;
+    var n = el.querySelector('.px-tk');
+    if (!n) { n = document.createElement('span'); n.className = 'px-tk'; el.appendChild(n); }
+    var t = calc(v); if (n.textContent !== t) n.textContent = t;
+  }
+  window.pxTkSync = function () {
+    if (!on()) return;
+    document.querySelectorAll('.id-bal h4, .dk-bal').forEach(function (el) { var v = num(el.textContent); if (v !== null) put(el, v); });
+    document.querySelectorAll('.ws-bal').forEach(putIn);
+  };
+  window.pxTkApply = function () {
+    var o = on();
+    document.body.classList.toggle('px-tk-off', !o);
+    var sw = document.getElementById('tkSw'); if (sw) sw.classList.toggle('on', o);
+    if (o) pxTkSync();
+  };
+  window.pxTkToggle = function () {
+    appData.showTk = !on(); try { saveData(); } catch (e) {}
+    pxTkApply();
+  };
+  // আইডি ডিটেইল পেজের বড় ব্যালেন্স (কাউন্ট-আপ এনিমেশনের টার্গেট থেকে)
+  var oAn = window.animateNum;
+  if (typeof oAn === 'function') window.animateNum = function (el, target) {
+    var r = oAn.apply(this, arguments);
+    try { if (el && el.id === 'detailBal' && on()) put(el, Number(target) || 0); } catch (e) {}
+    return r;
+  };
+  // হালকা রাখতে: ডম বদলালে rAF-এ একবারই চলে
+  var pend = false;
+  function sched() { if (pend) return; pend = true; requestAnimationFrame(function () {
+    pend = false;
+    try { pxTkSync(); document.body.classList.toggle('px-many', document.querySelectorAll('#idContainer .id-card').length > 24); } catch (e) {}
+  }); }
+  function init() {
+    ['idContainer', 'dashAccountsContainer', 'workSelList', 'catSelList'].forEach(function (id) {
+      var el = document.getElementById(id); if (el) new MutationObserver(sched).observe(el, { childList: true, subtree: true });
+    });
+    // দুর্বল ফোনে ঘোরানো এনিমেশন বন্ধ
+    try { var c = navigator.hardwareConcurrency || 8, m = navigator.deviceMemory || 8; if (c <= 4 || m <= 3) document.body.classList.add('px-lite'); } catch (e) {}
+    // স্ক্রলের সময় এনিমেশন থামে
+    var st; window.addEventListener('scroll', function () {
+      if (!document.body.classList.contains('px-scrolling')) document.body.classList.add('px-scrolling');
+      clearTimeout(st); st = setTimeout(function () { document.body.classList.remove('px-scrolling'); }, 160);
+    }, { passive: true, capture: true });
+    pxTkApply(); sched();
+  }
+  if (document.readyState === 'complete') init(); else window.addEventListener('load', init);
 })();
 </script>
 
