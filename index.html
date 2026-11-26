@@ -1375,6 +1375,7 @@
     body #page-dash .top-global-bal h2 { font-size: 50px !important; letter-spacing: -1.6px !important; margin: 4px 0 14px; }
     body #page-dash .top-global-bal .icon-box { width: 44px !important; height: 44px !important; cursor: pointer; }
     #page-dash .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; margin: 0; }
+    #page-dash .wk-card { grid-column: 1 / -1 !important; }
     #page-dash .hero-card { display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 20px 34px; }
     #page-dash .hero-card > :first-child { grid-column: 1; }
     #page-dash .hero-card h1 { grid-column: 1; font-size: 36px; }
@@ -1685,25 +1686,6 @@ body[data-theme] #appContainer .top-global-bal.top-global-bal .px-work{position:
                     <p id="dashWorkSub" style="font-size:12px; margin:4px 0 0;"></p>
                 </div>
             </div>
-            <div class="stat-box pend-box" id="pendBox" style="display:none;"></div>
-            <div class="stat-box" id="svipSoonBox" style="display:none; grid-column: span 2;"></div>
-            <div class="stat-box">
-                <p id="t-added">আজকের অ্যাড কয়েন (+)</p>
-                <h3 class="text-success" id="dashIn">0</h3>
-            </div>
-            <div class="stat-box">
-                <p id="t-spent">আজকের খরচ কয়েন (-)</p>
-                <h3 class="text-danger" id="dashOut">0</h3>
-            </div>
-            <div class="stat-box" style="grid-column: span 2; border-color: var(--warning);">
-                <p data-bn="🏷️ বিক্রয় কয়েন" data-en="🏷️ Coins Sold"></p>
-                <h3 class="text-danger" id="dashSold">0</h3>
-                <p id="dashSoldTk" style="font-size:11px; margin-top:4px;"></p>
-            </div>
-            <div class="stat-box" style="grid-column: span 2; background: var(--surface-light); border-color: var(--primary);">
-                <p style="color: var(--primary);" id="t-dashTodayIncome">আজকের মোট ক্যাশ ইনকাম (বিক্রি + আদায়)</p>
-                <h3 class="text-primary" style="font-size: 20px;" id="dashTodayIncomeVal">৳ 0.00</h3>
-            </div>
         </div>
 
         <div class="hero-card">
@@ -1711,6 +1693,7 @@ body[data-theme] #appContainer .top-global-bal.top-global-bal .px-work{position:
             <h1 id="totalBalance">0</h1>
             <p id="heroAddedTk" style="margin-top: 6px; margin-bottom: 0; text-transform: none; letter-spacing: 0;"></p>
         </div>
+
 
         <div class="dash-filter">
             <button class="dash-btn active" onclick="setDashFilter(this, 'today')" id="t-dToday">আজ</button>
@@ -1730,6 +1713,29 @@ body[data-theme] #appContainer .top-global-bal.top-global-bal .px-work{position:
             <div class="pro-card-h" data-bn="🍩 ক্যাটাগরি অনুযায়ী ব্যালেন্স" data-en="🍩 Balance by Category"></div>
             <div id="catChart"></div>
         </div>
+
+        <div class="stats-grid">
+            <div class="stat-box pend-box" id="pendBox" style="display:none;"></div>
+            <div class="stat-box" id="svipSoonBox" style="display:none; grid-column: span 2;"></div>
+            <div class="stat-box" style="grid-column: span 2; border-color: var(--warning);">
+                <p data-bn="🏷️ বিক্রয় কয়েন" data-en="🏷️ Coins Sold"></p>
+                <h3 class="text-danger" id="dashSold">0</h3>
+                <p id="dashSoldTk" style="font-size:11px; margin-top:4px;"></p>
+            </div>
+            <div class="stat-box" style="grid-column: span 2; background: var(--surface-light); border-color: var(--primary);">
+                <p style="color: var(--primary);" id="t-dashTodayIncome">আজকের মোট ক্যাশ ইনকাম (বিক্রি + আদায়)</p>
+                <h3 class="text-primary" style="font-size: 20px;" id="dashTodayIncomeVal">৳ 0.00</h3>
+            </div>
+            <div class="stat-box">
+                <p id="t-added">আজকের অ্যাড কয়েন (+)</p>
+                <h3 class="text-success" id="dashIn">0</h3>
+            </div>
+            <div class="stat-box">
+                <p id="t-spent">আজকের খরচ কয়েন (-)</p>
+                <h3 class="text-danger" id="dashOut">0</h3>
+            </div>
+        </div>
+
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 8px;">
             <h3 style="font-size: 14px; font-weight: 600; color: var(--text-muted);" id="t-dashAccountsTitle">অ্যাকাউন্টের অবস্থা (ভিউ-অনলি)</h3>
